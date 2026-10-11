@@ -149,6 +149,76 @@ Admin:
 - `GET /api/admin/applications`
 - `PUT /api/admin/users/:id/status`
 
+## New Features (assignment extension)
+
+Three features were added on top of the original app. The original `schema.sql` and `seed.sql` are unchanged.
+
+1. **Smart Job Alerts** (job seeker) - saved alerts (max 10) and an explainable match score.
+2. **Interview Scheduler** - employers propose 1-3 slots for a shortlisted applicant; the candidate confirms or declines.
+3. **Candidate Scorecards** (employer-only) - 1-5 ratings, recommendation, private notes, overall computed in SQL.
+
+### Database setup for the new features
+
+Run these AFTER `schema.sql` and `seed.sql`. Both are safe to re-run.
+
+```bash
+npm run migrate          # creates job_alerts, interviews, interview_slots, scorecards
+npm run seed:features    # sample alerts, an interview, scorecards, extra applicants
+```
+
+`npm run` uses the credentials in `.env` (no `mysql` command needed). Equivalent with the CLI:
+
+```bash
+mysql -u root -p jobconnect < database/migrations/001_new_features.sql
+mysql -u root -p jobconnect < database/seed_features.sql
+```
+
+If your database is not called `jobconnect`, set `DB_NAME` in `.env`; the npm scripts honour it.
+Requires MariaDB 10.2+ or MySQL 8.0.16+ (generated columns and CHECK constraints).
+
+### New endpoints
+
+All need `Authorization: Bearer <token>`. Errors: 400 validation, 401 no/invalid token, 403 wrong role or not the owner, 404 not found, 409 conflict.
+
+| Method and path | Who | Purpose |
+| --- | --- | --- |
+| `GET /api/alerts` | job seeker | My alerts with live match counts |
+| `POST /api/alerts` | job seeker | Create (max 10, else 409) |
+| `PUT /api/alerts/:id` | owner | Edit |
+| `PATCH /api/alerts/:id/status` | owner | Pause or resume `{ "is_active": false }` |
+| `DELETE /api/alerts/:id` | owner | Delete |
+| `GET /api/alerts/:id/matches` | owner | Jobs ranked by match score, at or above the alert's minimum |
+| `GET /api/alerts/match/jobs/:jobId` | job seeker | Score and matched/missing skills for one job |
+| `GET /api/alerts/match/recommendations` | job seeker | Top open jobs for my profile (excludes jobs I applied to) |
+| `POST /api/interviews` | employer (owner of the job) | Propose interview + 1-3 slots; applicant must be Shortlisted |
+| `GET /api/interviews[?job_id=]` | seeker (own), employer (own jobs), admin (all) | List with slots |
+| `POST /api/interviews/:id/confirm` | invited candidate | `{ "slot_id": 5 }` |
+| `POST /api/interviews/:id/decline` | invited candidate | `{ "reason": "..." }` (required) |
+| `POST /api/interviews/:id/cancel` | employer (owner) | Cancel a Proposed or Confirmed interview |
+| `GET /api/scorecards/application/:id` | employer (owner), admin | One scorecard or `null` |
+| `PUT /api/scorecards/application/:id` | employer (owner) only | Create or update (upsert) |
+| `GET /api/scorecards/job/:jobId[?rank=1]` | employer (owner), admin | All scorecards for a job, optionally best first |
+
+Job seekers always get 403 on `/api/scorecards/*`; admins are read-only there.
+
+### How the match score works
+
+`score = round(70% x skills coverage + 30% x location fit)` (see `services/matchScore.js`).
+
+- The job's `requirements` text is split into requirements (commas, new lines, "and").
+- A requirement counts as covered only if MORE than half of its meaningful words (filler such as "experience" or "strong" removed, plurals and Node.js/NodeJS normalised) appear in the seeker's profile skills.
+- Location: remote job = 100, same city = 100, same country = 50, otherwise 0.
+- Only open jobs are scored. Matches are computed live on every request; nothing is stored.
+
+### Tests
+
+```bash
+npm test                    # unit tests (no database needed)
+npm run test:integration    # live API + database; starts its own server on a free port
+```
+
+The integration tests use the seed accounts, create their own jobs/applications and delete them afterwards. Run them only against your local learning database. Set `API_URL=http://localhost:5000` to test a server you already started.
+
 ## Student Exercises
 
 - Add validation for stronger passwords during registration.
