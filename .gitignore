@@ -3,3 +3,8 @@ node_modules/
 uploads/*
 !uploads/.gitkeep
 npm-debug.log*
+
+*.log
+.DS_Store
+Thumbs.db
+coverage/

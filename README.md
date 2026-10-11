@@ -42,8 +42,8 @@ jobconnect-backend/
 
 ## Requirements
 
-- Node.js 18 or newer
-- MariaDB or MySQL
+- Node.js 20.19+ or 22.12+ (the frontend's Vite 8 requires it; the backend alone needs 18+). Tests were run on Node 24.19 with npm 11.
+- MariaDB 10.2+ or MySQL 8.0.16+. The new features were verified on **MariaDB 11.4.5 only**; MySQL has not been tested.
 - npm
 
 ## Setup
@@ -60,7 +60,7 @@ Create your environment file:
 cp .env.example .env
 ```
 
-Update `.env`:
+Update `.env` for your machine (`DB_PASSWORD` and `DB_PORT` must match your database server; `.env` is git-ignored and must never be committed):
 
 ```env
 PORT=5000
@@ -73,6 +73,8 @@ JWT_SECRET=replace_this_with_a_long_random_secret
 JWT_EXPIRES_IN=7d
 FRONTEND_URL=http://localhost:5173
 ```
+
+CORS: the API accepts requests from `http://localhost:5173` and `http://127.0.0.1:5173` by default. To allow other origins set `FRONTEND_URLS=http://a.example,http://b.example` (comma separated).
 
 Create and seed the database:
 
