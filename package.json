@@ -5,7 +5,11 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js"
+    "dev": "nodemon server.js",
+    "migrate": "node scripts/run-sql.js database/migrations/001_new_features.sql",
+    "seed:features": "node scripts/run-sql.js database/seed_features.sql",
+    "test": "node --test \"tests/unit/*.test.js\"",
+    "test:integration": "node --test --test-concurrency=1 \"tests/integration/*.test.js\""
   },
   "dependencies": {
     "bcrypt": "^6.0.0",

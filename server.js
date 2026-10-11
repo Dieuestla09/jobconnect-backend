@@ -10,6 +10,9 @@ const profileRoutes = require('./routes/profileRoutes');
 const jobRoutes = require('./routes/jobRoutes');
 const applicationRoutes = require('./routes/applicationRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const alertRoutes = require('./routes/alertRoutes');
+const interviewRoutes = require('./routes/interviewRoutes');
+const scorecardRoutes = require('./routes/scorecardRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -58,6 +61,10 @@ app.use('/api/profile', profileRoutes);
 app.use('/api/jobs', jobRoutes);
 app.use('/api/applications', applicationRoutes);
 app.use('/api/admin', adminRoutes);
+// New features: smart job alerts + match scores, interview scheduler, candidate scorecards.
+app.use('/api/alerts', alertRoutes);
+app.use('/api/interviews', interviewRoutes);
+app.use('/api/scorecards', scorecardRoutes);
 
 // Any request that reached this point did not match a defined route.
 app.use((req, res) => {
